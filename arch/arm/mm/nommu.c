@@ -49,6 +49,28 @@ void __init reserve_node_zero(pg_data_t *pgdat)
 	reserve_bootmem_node(pgdat, CONFIG_VECTORS_BASE, PAGE_SIZE,
 			BOOTMEM_DEFAULT);
 #endif
+
+#if defined(CONFIG_MTD_UCLINUX) && defined(CONFIG_MTD_UCLINUX_RELOCATE)
+{		
+	/*
+	 * If using a romfs in ram, reserve this memory.
+	 */
+	unsigned char *p;
+	unsigned romfslen;
+	unsigned ressiz;
+	p = (unsigned char *)_end;
+	if (!strncmp(p, "-rom1fs-", 8))
+	{
+		romfslen = p[8];
+		romfslen = (romfslen << 8) + p[9];
+		romfslen = (romfslen << 8) + p[10];
+		romfslen = (romfslen << 8) + p[11];
+		ressiz   = PAGE_ALIGN((unsigned)p + romfslen);
+		reserve_bootmem_node(pgdat, __pa(p), ressiz - (unsigned)p,
+				BOOTMEM_DEFAULT);
+	}//if
+}
+#endif
 }
 
 /*

@@ -32,6 +32,7 @@
 #include <linux/device.h>
 #include <linux/efi.h>
 #include <linux/fb.h>
+#include <linux/backing-dev.h>
 
 #include <asm/fb.h>
 
@@ -41,6 +42,10 @@
      */
 
 #define FBPIXMAPSIZE	(1024 * 8)
+
+static struct backing_dev_info fb_mappable_backing_dev = {
+	.capabilities = BDI_CAP_MAP_DIRECT | BDI_CAP_READ_MAP | BDI_CAP_WRITE_MAP,
+};
 
 struct fb_info *registered_fb[FB_MAX] __read_mostly;
 int num_registered_fb __read_mostly;
@@ -1397,6 +1402,10 @@ __releases(&info->lock)
 		if (res)
 			module_put(info->fbops->owner);
 	}
+
+	if ((!res) && (file->f_mapping)) 
+		file->f_mapping->backing_dev_info = &fb_mappable_backing_dev;
+
 #ifdef CONFIG_FB_DEFERRED_IO
 	if (info->fbdefio)
 		fb_deferred_io_open(info, inode, file);
@@ -1421,6 +1430,28 @@ __releases(&info->lock)
 	return 0;
 }
 
+#ifndef HAVE_ARCH_FB_UNMAPPED_AREA
+static unsigned long 
+fb_get_unmapped_area(struct file *file, unsigned long addr,
+					 unsigned long len, unsigned long pgoff, 
+					 unsigned long flags)
+{
+	struct fb_info * const info = file->private_data;
+	unsigned long ret = -ENOSYS;
+
+	mutex_lock(&info->lock);
+  	if (info->fbops->fb_get_unmapped_area)
+    	ret = info->fbops->fb_get_unmapped_area(info, file, addr, len, pgoff, flags);
+#ifndef CONFIG_MMU
+  	else if (info->screen_base)
+      	ret = (unsigned long)info->screen_base;
+#endif
+	mutex_unlock(&info->lock);
+  	
+  	return ret;
+}
+#endif
+
 static const struct file_operations fb_fops = {
 	.owner =	THIS_MODULE,
 	.read =		fb_read,
@@ -1434,6 +1465,8 @@ static const struct file_operations fb_fops = {
 	.release =	fb_release,
 #ifdef HAVE_ARCH_FB_UNMAPPED_AREA
 	.get_unmapped_area = get_fb_unmapped_area,
+#else
+	.get_unmapped_area = fb_get_unmapped_area,	
 #endif
 #ifdef CONFIG_FB_DEFERRED_IO
 	.fsync =	fb_deferred_io_fsync,

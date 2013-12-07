@@ -2191,6 +2191,17 @@ config FB_BROADSHEET
 	  and could also have been called by other names when coupled with
 	  a bridge adapter.
 
+config FB_STM32
+	bool "STM32F4 Virtual framebuffer support"
+	depends on FB
+	select FB_CFB_FILLRECT
+	select FB_CFB_COPYAREA
+	select FB_CFB_IMAGEBLIT
+	help
+	  Build in support for the STM32F4 LTDC LCD/TFT Controller 
+	  as a framebuffer. LTDC configured in u-boot.  
+	  Product specs at <http://www.st.com>.
+
 source "drivers/video/omap/Kconfig"
 source "drivers/video/omap2/Kconfig"
 

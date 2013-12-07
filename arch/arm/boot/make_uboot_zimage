@@ -1,0 +1,8 @@
+#!/bin/sh
+
+rm zuImage.bin
+cp Image Image.bin
+gzip Image.bin
+mkimage -A arm -O linux -T kernel -C gzip -a 0x90008000 -e 0x90008001 -n "Linux-2.6.33-arm1" -d Image.bin.gz zuImage.bin
+rm Image.bin.gz
+

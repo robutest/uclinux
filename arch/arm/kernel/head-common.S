@@ -358,3 +358,114 @@ __vet_atags:
 1:	mov	r2, #0
 	mov	pc, lr
 ENDPROC(__vet_atags)
+
+
+/*
+ * Copy the romfs to the end of "_end" segment.
+ *
+ *  __romfsinfo
+ *		.long <RomFS start address in ROM>
+ *		.long <RomFS start address in RAM>
+ */
+
+#if defined(CONFIG_MTD_UCLINUX) && defined(CONFIG_MTD_UCLINUX_RELOCATE)
+	.align	2
+	.type	__romfsinfo, %object
+__romfsinfo:
+	.long	CONFIG_MTD_UCLINUX_PHYADDR	@ r6 RomFS start dddress
+	.long	_end						@ r7 Kernel end address. This is used in "uclinuc.c"
+
+__relocate_romfs:
+   	adr 	r4, __romfsinfo
+	ldmia	r4!, {r6, r7}
+   	   
+   	/* 
+   	 * Move the ram based rom filesystem to its correct final location 
+   	 */
+   	mov 	fp, #0
+   	add 	r4, r6, #8
+   	ldrb 	r4, [r4]
+   	orr 	fp, fp, r4, lsl #24
+   	add 	r4, r6, #9
+   	ldrb 	r4, [r4]
+   	orr 	fp, fp, r4, lsl #16
+   	add 	r4, r6, #10
+   	ldrb 	r4, [r4]
+   	orr 	fp, fp, r4, lsl #8
+   	add 	r4, r6, #11
+   	ldrb 	r4, [r4]
+   	orr 	fp, fp, r4, lsl #0 		@ fp = romfs_size
+   	ldr     r4, =0x000fffff			@ 1 MB boundary mask
+   	and     fp, fp, r4				@ 1 MB romfs boundary
+   	add 	r4, r6, fp				@ r4 = src_end-4
+   	sub 	r4, r4, #4
+   	add 	fp, r7, fp				@ fp = dst_end-4
+   	sub 	fp, fp, #4
+1: 	ldr 	r5, [r4]
+   	str 	r5, [fp]
+   	sub 	r4, r4, #4
+   	sub 	fp, fp, #4
+   	cmp 	r4, r6
+   	bne 	1b
+	ldr 	r5, [r4]				@ read last byte from src
+   	str 	r5, [fp]				@ write last byte to the dst
+   	mov 	pc, lr
+ENDPROC(__relocate_romfs)
+#endif
+
+
+/*
+ * Copy the ".init_data" section data from ROM to RAM
+ * and clear ".bss" section.
+ *
+ *  __section_bss
+ *		.long <".bss" section start address in RAM>
+ *		.long <".bss" section end   address in RAM>
+ *
+ *  __section_data
+ *		.long <Data section start address in ROM>
+ *		.long <Data section end   address in ROM>
+ *		.long <Data section start address in RAM>
+ */
+
+#ifdef CONFIG_XIP_KERNEL
+	.align	2
+
+	.type	__section_bss, %object
+__section_bss:
+	.long	__bss_start				@ r6 ".bss" section start address
+	.long	__bss_stop				@ r7 ".bss" section end   address
+
+	.type	__section_data, %object
+__section_data:
+	.long	__data_loc				@ r6 data section start address in ROM
+	.long	_edata_loc				@ r7 data section end   address in ROM
+	.long	_sdata					@ r8 data section start address in RAM
+
+__relocate_xipdata:
+   	   
+   	/* 
+   	 * Copy the ".init_data" section data from ROM to RAM location 
+   	 */
+   	adr 	r4, __section_data
+	ldmia	r4!, {r6, r7, r8}
+1: 	ldr 	r5, [r6]
+   	str 	r5, [r8]
+   	add 	r6, r6, #4
+   	add 	r8, r8, #4
+   	cmp 	r6, r7
+   	bne 	1b
+
+   	/* 
+   	 * Clear the ".bss" section data in RAM location 
+   	 */
+   	adr 	r4, __section_bss
+	ldmia	r4!, {r6, r7}
+	mov 	fp, #0
+2: 	str 	fp, [r6]
+   	add 	r6, r6, #4
+   	cmp 	r6, r7
+   	bne 	2b
+   	mov 	pc, lr
+ENDPROC(__relocate_xipdata)
+#endif

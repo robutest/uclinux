@@ -493,6 +493,21 @@ config MTD_UCLINUX
 	help
 	  Map driver to support image based filesystems for uClinux.
 
+config MTD_UCLINUX_PHYADDR
+	hex "Filesystem image physical start address"
+	depends on MTD_UCLINUX
+	default "0x08120000"
+	help
+	  This is the physical start address of RAM/ROM filesystem 
+	  image for uCLinux map driver.
+
+config MTD_UCLINUX_RELOCATE
+	bool "Relocate RAM/ROM filesystem image to the memory"
+	depends on MTD_UCLINUX
+	default n
+	help
+	  Relocate RAM/ROM filesystem image to the top of memory.
+
 config MTD_WRSBC8260
 	tristate "Map driver for WindRiver PowerQUICC II MPC82xx board"
 	depends on (SBC82xx || SBC8560)

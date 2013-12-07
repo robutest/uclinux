@@ -314,6 +314,38 @@ void __init stm32_iomux_init(void)
 
 #ifndef CONFIG_ARCH_STM32F1
 	/* STM32F2-based platforms */
+	case PLATFORM_STM32_STM32429_DISCO:
+
+		/*
+		 * Pin configuration for the UARTs.
+		 */
+#if defined(CONFIG_STM32_USART3)
+		gpio_dsc.port = 2;
+		gpio_dsc.pin  = 10;
+		stm32f2_gpio_config(&gpio_dsc, STM32F2_GPIO_ROLE_USART3);
+
+		gpio_dsc.port = 2;
+		gpio_dsc.pin  = 11;
+		stm32f2_gpio_config(&gpio_dsc, STM32F2_GPIO_ROLE_USART3);
+#endif
+
+		/*
+		 * Pin configuration for the User LED of the STM32F429ZI-DISCO board.
+		 */
+#if defined(CONFIG_GPIOLIB) && defined(CONFIG_GPIO_SYSFS)
+
+		/* PG13 = LED LD3 */
+		gpio_dsc.port = 6;
+		gpio_dsc.pin  = 13;
+		stm32f2_gpio_config(&gpio_dsc, STM32F2_GPIO_ROLE_OUT);
+
+		/* PG14 = LED LD4 */
+		gpio_dsc.port = 6;
+		gpio_dsc.pin  = 14;
+		stm32f2_gpio_config(&gpio_dsc, STM32F2_GPIO_ROLE_OUT);
+#endif /* CONFIG_GPIOLIB */
+		break;
+
 	case PLATFORM_STM32_STM3220G_EVAL:
 	case PLATFORM_STM32_STM3240G_EVAL:
 	case PLATFORM_STM32_STM_SOM:
