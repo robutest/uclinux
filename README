@@ -1,8 +1,8 @@
+Small Linux version with MMU less support. 
+uClinux, μClinux and the logos versions are Trademarks of Arcturus Networks Inc. 
+Copyright © 1998 - 2002 D. Jeff Dionne and Michael Durrant 
+Copyright © 2001 - 2011 Arcturus Networks Inc. 
+
 This is the source tree of the uClinux kernel that is part of the Linux
-Cortex-M distribution maintained by Emcraft Systems.
+Cortex-M distribution.
 
-The list of Cortex-M3 and Cortex-M4 MCUs and boards supported by this
-version of Linux Cortex-M is available at http://www.emcraft.com.
-
-If you want to contribute code to this source tree, please email your
-patches to a2f-linux-support@emcraft.com.
